@@ -25,8 +25,8 @@ export const BotConfig = {
   buttonDefaults: {
     style: 1, // 1 = Primary, 2 = Secondary, 3 = Success, 4 = Danger, 5 = Link
   },
-  
-  // Projects available in the Project Update template
+
+  // Projects available in the Project Update template and modules
   projects: [
     {
       id: 'snowos',
@@ -59,4 +59,42 @@ export const BotConfig = {
       url: 'https://portfolio.example.com'
     }
   ] as ProjectConfig[],
+
+  // Module Configurations
+  modules: {
+    suggestions: {
+      enabled: true,
+      channelId: process.env.SUGGESTIONS_CHANNEL_ID || '123456789012345678', // Replace with real channel ID
+      autoCreateThread: true,
+      duplicateThreshold: 0.6,
+      colors: {
+        pending: '#FEE75C' as ColorResolvable,
+        reviewing: '#3498DB' as ColorResolvable,
+        planned: '#9B59B6' as ColorResolvable,
+        inProgress: '#E67E22' as ColorResolvable,
+        testing: '#1ABC9C' as ColorResolvable,
+        implemented: '#57F287' as ColorResolvable,
+        declined: '#ED4245' as ColorResolvable,
+        duplicate: '#95A5A6' as ColorResolvable,
+      }
+    },
+    bugs: {
+      enabled: true,
+      channelId: process.env.BUGS_CHANNEL_ID || '123456789012345679', // Replace with real channel ID
+      autoCreateThread: true,
+      duplicateThreshold: 0.6,
+      colors: {
+        critical: '#ED4245' as ColorResolvable, // Red
+        high: '#E67E22' as ColorResolvable,     // Orange
+        medium: '#FEE75C' as ColorResolvable,   // Yellow
+        low: '#3498DB' as ColorResolvable,      // Blue
+        duplicate: '#95A5A6' as ColorResolvable, // Gray
+      }
+    }
+  },
+
+  // Permissions & Staff Roles
+  permissions: {
+    staffRoles: (process.env.STAFF_ROLE_IDS || 'your_staff_role_id_here').split(','),
+  }
 };

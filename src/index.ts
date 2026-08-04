@@ -2,6 +2,10 @@ import { Client, GatewayIntentBits, Collection, REST, Routes } from 'discord.js'
 import * as dotenv from 'dotenv';
 import { CustomClient } from './types';
 import { postCommand } from './commands/post';
+import { suggestionCommand } from './commands/suggestion';
+import { suggestionsCommand } from './commands/suggestions';
+import { bugCommand } from './commands/bug';
+import { bugsCommand } from './commands/bugs';
 import { interactionCreateEvent } from './events/interactionCreate';
 import { readyEvent } from './events/ready';
 
@@ -13,6 +17,10 @@ const client = new Client({
 
 client.commands = new Collection();
 client.commands.set(postCommand.data.name, postCommand);
+client.commands.set(suggestionCommand.data.name, suggestionCommand);
+client.commands.set(suggestionsCommand.data.name, suggestionsCommand);
+client.commands.set(bugCommand.data.name, bugCommand);
+client.commands.set(bugsCommand.data.name, bugsCommand);
 
 client.once(readyEvent.name as any, (arg: any) => readyEvent.execute(arg));
 client.on(interactionCreateEvent.name as any, (arg: any) => interactionCreateEvent.execute(arg, client));

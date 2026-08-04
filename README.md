@@ -124,3 +124,47 @@ The templates are listed in `src/commands/post.ts`. If you want to add a new one
 1. Add its name to the `templates` array in `src/commands/post.ts`.
 2. The bot will automatically handle the new template and apply the base embed styling.
 3. (Optional) If you want specific custom logic for a template, modify the `createBaseEmbed` function in `src/embeds/index.ts`.
+
+---
+
+## 6. Suggestions & Bug Reports Modules
+
+The bot includes robust systems for handling Suggestions and Bug Reports, designed to feel comparable to GitHub Issues.
+
+### How Suggestions Work
+1. **Creation**: Users run `/suggestion`, select a project and type, and fill out a modal (Title, Description, Image URL).
+2. **Duplicate Detection**: The system checks existing suggestions for the same project. If similar ones exist (based on a similarity threshold), it warns the user before posting.
+3. **Voting**: Users can Upvote or Downvote suggestions using interactive buttons. Members cannot cast multiple votes.
+4. **Discussion**: A "💬 Discussion" button automatically creates a dedicated thread for the suggestion.
+5. **Staff Management**: Staff can update the status (Pending, Reviewing, Planned, In Progress, etc.) via a dropdown on the suggestion message.
+6. **Search**: Use the `/suggestions` command to filter and sort suggestions by Project, Status, Author, or Top Upvoted.
+
+### How Bug Reports Work
+1. **Creation**: Users run `/bug`, select the project, version, platform, and severity. Then they fill out a modal with Title, Description, Steps to Reproduce, and Expected/Actual behavior.
+2. **Duplicate Detection**: Similar to suggestions, it warns the user if similar bugs have been reported.
+3. **Discussion**: A dedicated button creates a thread for the bug report.
+4. **Severity Colors**: Embeds are color-coded based on severity (Critical = Red, High = Orange, Medium = Yellow, Low = Blue).
+5. **Staff Management**: Staff can update bug statuses (Open, Investigating, Confirmed, Fixed, etc.) via a dropdown.
+6. **Search**: Use the `/bugs` command to filter by Project, Status, Severity, and Reporter.
+
+### Database Schema
+The database (managed via Drizzle ORM) includes tables for these modules:
+- `suggestions`: Stores all suggestion data, status, and linked message/thread IDs.
+- `suggestion_votes`: Tracks individual user votes (Upvote/Downvote) to prevent duplicates.
+- `suggestion_history`: Keeps an audit trail of status changes.
+- `bug_reports`: Stores bug report data including steps to reproduce, expected/actual behaviors.
+- `bug_history`: Keeps an audit trail of bug status changes.
+- `threads`: Stores metadata for created threads.
+
+### Configuration
+Everything is fully configurable in `src/config/index.ts` and `.env`:
+- **Channels**: Set `SUGGESTIONS_CHANNEL_ID` and `BUGS_CHANNEL_ID` in your `.env`.
+- **Permissions**: Add staff roles to `STAFF_ROLE_IDS` in `.env` (comma-separated).
+- **Projects**: Edit `BotConfig.projects` in `src/config/index.ts` to add or remove projects. These projects appear in the slash command dropdowns.
+- **Colors & Statuses**: Customize colors for different statuses and severities in `BotConfig.modules`.
+- **Duplicate Detection**: Adjust `duplicateThreshold` (default `0.6`) in `BotConfig.modules` to make duplicate detection more or less sensitive.
+- **Thread Creation**: Toggle `autoCreateThread` in the config if you want threads created automatically upon submission.
+
+### Permissions
+- **Everyone** can create suggestions, bug reports, vote, and search.
+- **Staff** (defined by `STAFF_ROLE_IDS` or Administrator permission) can change statuses via the interactive dropdowns on the embeds. Status changes are audited in the database history tables.
