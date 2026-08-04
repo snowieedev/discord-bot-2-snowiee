@@ -40,25 +40,22 @@ export const bugCommand = {
           { name: 'Medium', value: 'Medium' },
           { name: 'Low', value: 'Low' }
         )
+    )
+    .addAttachmentOption(option =>
+      option.setName('attachment')
+        .setDescription('Upload an attachment (e.g. screenshot)')
+        .setRequired(false)
     ),
   async execute(interaction: ChatInputCommandInteraction) {
     const project = interaction.options.getString('project');
     const version = interaction.options.getString('version');
     const platform = interaction.options.getString('platform');
     const severity = interaction.options.getString('severity');
+    const attachment = interaction.options.getAttachment('attachment');
 
-    // We can pass data through customId, but we might hit length limits if not careful.
-    // customId max length is 100 characters.
-    // Format: bug_modal_proj_ver_plat_sev
-    // If length is > 100 we should ideally use a cache, but for now we try to fit it.
-    // Alternatively, we store pending data in a memory cache keyed by interaction.id
-    
-    // To be safe and since version can be arbitrary length:
     const interactionId = interaction.id;
-    // For now we'll put them in customId assuming it fits, or we can use a small cache.
-    // Let's use a small local cache for modal context:
     (global as any).modalCache = (global as any).modalCache || new Map();
-    (global as any).modalCache.set(interactionId, { project, version, platform, severity });
+    (global as any).modalCache.set(interactionId, { project, version, platform, severity, attachmentUrl: attachment?.url });
 
     const modal = new ModalBuilder()
       .setCustomId(`bug_modal_${interactionId}`)

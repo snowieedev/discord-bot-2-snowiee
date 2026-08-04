@@ -23,13 +23,23 @@ export const suggestionCommand = {
           { name: 'Performance', value: 'Performance' },
           { name: 'Other', value: 'Other' }
         )
+    )
+    .addAttachmentOption(option =>
+      option.setName('image')
+        .setDescription('Upload an image attachment')
+        .setRequired(false)
     ),
   async execute(interaction: ChatInputCommandInteraction) {
     const project = interaction.options.getString('project');
     const type = interaction.options.getString('type');
+    const attachment = interaction.options.getAttachment('image');
+
+    const interactionId = interaction.id;
+    (global as any).modalCache = (global as any).modalCache || new Map();
+    (global as any).modalCache.set(interactionId, { project, type, attachmentUrl: attachment?.url });
 
     const modal = new ModalBuilder()
-      .setCustomId(`sug_modal_${project}_${type}`)
+      .setCustomId(`sug_modal_${interactionId}`)
       .setTitle('New Suggestion');
 
     const titleInput = new TextInputBuilder()

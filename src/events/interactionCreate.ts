@@ -93,13 +93,16 @@ export const interactionCreateEvent = {
 
       // SUGGESTION MODAL
       else if (interaction.customId.startsWith('sug_modal_')) {
-        const parts = interaction.customId.split('_');
-        const project = parts[2];
-        const type = parts[3];
+        const interactionId = interaction.customId.replace('sug_modal_', '');
+        const context = (global as any).modalCache?.get(interactionId);
+        if (!context) return interaction.reply({ content: 'Session expired. Please run the command again.', ephemeral: true });
+
+        const project = context.project;
+        const type = context.type;
 
         const title = interaction.fields.getTextInputValue('sug_title');
         const description = interaction.fields.getTextInputValue('sug_desc');
-        const image = interaction.fields.getTextInputValue('sug_image') || undefined;
+        const image = interaction.fields.getTextInputValue('sug_image') || context.attachmentUrl || undefined;
 
         const similar = await SuggestionService.getSimilarSuggestions(title, project);
 
@@ -142,7 +145,7 @@ export const interactionCreateEvent = {
         const description = interaction.fields.getTextInputValue('bug_desc');
         const steps = interaction.fields.getTextInputValue('bug_steps');
         const expectedActual = interaction.fields.getTextInputValue('bug_exp_act');
-        const attachment = interaction.fields.getTextInputValue('bug_attachment') || undefined;
+        const attachment = interaction.fields.getTextInputValue('bug_attachment') || context.attachmentUrl || undefined;
 
         const similar = await BugService.getSimilarBugs(title, description, context.project);
 
