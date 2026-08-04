@@ -1,5 +1,6 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import { BugService } from '../services/bugService';
+import { ConfigService } from '../services/configService';
 import { BotConfig } from '../config';
 
 export const bugsCommand = {
@@ -66,6 +67,9 @@ export const bugsCommand = {
       return interaction.followUp('No bug reports found matching those filters.');
     }
 
+    const config = interaction.guildId ? await ConfigService.getConfig(interaction.guildId) : null;
+    const channelId = config?.bugsChannelId;
+
     const embed = new EmbedBuilder()
       .setTitle('Bug Reports Search Results')
       .setColor(BotConfig.brandColor);
@@ -75,8 +79,8 @@ export const bugsCommand = {
     let desc = '';
     topResults.forEach(b => {
       desc += `**#${b.id} - ${b.title}**\nProject: ${b.projectKey} | Severity: ${b.severity} | Status: ${b.status}\n`;
-      if (b.messageId) {
-        desc += `[View Bug Report](https://discord.com/channels/${interaction.guildId}/${BotConfig.modules.bugs.channelId}/${b.messageId})\n\n`;
+      if (b.messageId && channelId) {
+        desc += `[View Bug Report](https://discord.com/channels/${interaction.guildId}/${channelId}/${b.messageId})\n\n`;
       } else {
         desc += '\n';
       }

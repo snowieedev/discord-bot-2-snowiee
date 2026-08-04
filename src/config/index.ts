@@ -64,7 +64,6 @@ export const BotConfig = {
   modules: {
     suggestions: {
       enabled: true,
-      channelId: process.env.SUGGESTIONS_CHANNEL_ID || '123456789012345678', // Replace with real channel ID
       autoCreateThread: true,
       duplicateThreshold: 0.6,
       colors: {
@@ -80,7 +79,6 @@ export const BotConfig = {
     },
     bugs: {
       enabled: true,
-      channelId: process.env.BUGS_CHANNEL_ID || '123456789012345679', // Replace with real channel ID
       autoCreateThread: true,
       duplicateThreshold: 0.6,
       colors: {
@@ -93,8 +91,6 @@ export const BotConfig = {
     }
   },
 
-  // Permissions & Staff Roles
-  permissions: {
-    staffRoles: (process.env.STAFF_ROLE_IDS || 'your_staff_role_id_here').split(','),
-  }
+  // Permissions & Staff Roles are now managed via DB
+  permissions: {}
 };

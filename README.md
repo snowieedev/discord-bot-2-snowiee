@@ -156,15 +156,15 @@ The database (managed via Drizzle ORM) includes tables for these modules:
 - `bug_history`: Keeps an audit trail of bug status changes.
 - `threads`: Stores metadata for created threads.
 
-### Configuration
-Everything is fully configurable in `src/config/index.ts` and `.env`:
-- **Channels**: Set `SUGGESTIONS_CHANNEL_ID` and `BUGS_CHANNEL_ID` in your `.env`.
-- **Permissions**: Add staff roles to `STAFF_ROLE_IDS` in `.env` (comma-separated).
-- **Projects**: Edit `BotConfig.projects` in `src/config/index.ts` to add or remove projects. These projects appear in the slash command dropdowns.
+### Configuration (Multi-Server Support)
+This bot is designed to be a public Discord bot! That means each server configures it independently directly inside Discord.
+
+- **`/setup` Command**: Server Administrators can run `/setup` to assign the Suggestions channel, Bugs channel, and Staff Roles for their specific server.
+- **Projects**: Edit `BotConfig.projects` in `src/config/index.ts` to add or remove projects globally. These projects appear in the slash command dropdowns.
 - **Colors & Statuses**: Customize colors for different statuses and severities in `BotConfig.modules`.
 - **Duplicate Detection**: Adjust `duplicateThreshold` (default `0.6`) in `BotConfig.modules` to make duplicate detection more or less sensitive.
 - **Thread Creation**: Toggle `autoCreateThread` in the config if you want threads created automatically upon submission.
 
 ### Permissions
 - **Everyone** can create suggestions, bug reports, vote, and search.
-- **Staff** (defined by `STAFF_ROLE_IDS` or Administrator permission) can change statuses via the interactive dropdowns on the embeds. Status changes are audited in the database history tables.
+- **Staff** (defined via `/setup` or users with Administrator permission) can change statuses via the interactive dropdowns on the embeds. Status changes are audited in the database history tables.

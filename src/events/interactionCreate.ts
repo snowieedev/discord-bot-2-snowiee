@@ -14,6 +14,7 @@ import {
 import { PostService } from '../services/postService';
 import { SuggestionService } from '../services/suggestionService';
 import { BugService } from '../services/bugService';
+import { ConfigService } from '../services/configService';
 import { createBaseEmbed } from '../embeds';
 import { createSuggestionEmbed } from '../embeds/suggestionEmbed';
 import { createBugEmbed } from '../embeds/bugEmbed';
@@ -44,7 +45,6 @@ export const interactionCreateEvent = {
     else if (interaction.isModalSubmit()) {
       // POST MODAL
       if (interaction.customId.startsWith('post_modal_')) {
-        // [Existing post logic...]
         const parts = interaction.customId.split('_');
         const isEdit = parts[1] === 'edit';
         
@@ -144,9 +144,6 @@ export const interactionCreateEvent = {
         const expectedActual = interaction.fields.getTextInputValue('bug_exp_act');
         const attachment = interaction.fields.getTextInputValue('bug_attachment') || undefined;
 
-        // split expected and actual roughly if user followed formatting, else store all in expected or handle simply
-        // For simplicity, we just store expectedActual in 'expected' and leave 'actual' empty, or split by line breaks.
-        // Actually the db has 'expected' and 'actual'. Let's just put it in 'expected' and 'N/A' for actual.
         const similar = await BugService.getSimilarBugs(title, description, context.project);
 
         const data = {
@@ -186,7 +183,6 @@ export const interactionCreateEvent = {
     else if (interaction.isButton()) {
       // POST BUTTONS
       if (interaction.customId.startsWith('post_publish_')) {
-        // [Existing post logic...]
         const draftId = parseInt(interaction.customId.split('_')[2]);
         const draft = await PostService.getPost(draftId);
         if (!draft) return interaction.reply({ content: 'Post draft not found.', ephemeral: true });
@@ -245,7 +241,7 @@ export const interactionCreateEvent = {
         const sug = await SuggestionService.getSuggestionById(sugId);
         const proj = BotConfig.projects.find(p => p.id === sug.projectKey);
         
-        const newEmbed = createSuggestionEmbed(sug, { tag: 'User', displayAvatarURL: () => '' }, proj, votes); // Ideally fetch real author
+        const newEmbed = createSuggestionEmbed(sug, { tag: 'User', displayAvatarURL: () => '' }, proj, votes);
         
         await interaction.message.edit({ embeds: [newEmbed] });
         await interaction.reply({ content: `Vote ${res}!`, ephemeral: true });
@@ -284,9 +280,11 @@ export const interactionCreateEvent = {
       }
     }
     else if (interaction.isStringSelectMenu()) {
-      // Check permissions for staff menus
+      if (!interaction.guildId) return;
+      const staffRoles = await ConfigService.getStaffRoles(interaction.guildId);
       const member = await interaction.guild?.members.fetch(interaction.user.id);
-      const isStaff = member?.roles.cache.some(r => BotConfig.permissions.staffRoles.includes(r.id)) || member?.permissions.has('Administrator');
+      
+      const isStaff = member?.roles.cache.some(r => staffRoles.includes(r.id)) || member?.permissions.has('Administrator');
       
       if (!isStaff) {
         return interaction.reply({ content: 'You do not have permission to use this.', ephemeral: true });
@@ -301,7 +299,6 @@ export const interactionCreateEvent = {
         const votes = await SuggestionService.getVoteCounts(sugId);
         const proj = BotConfig.projects.find(p => p.id === sug.projectKey);
         
-        // Fetch author logic to keep embed author
         const author = await interaction.client.users.fetch(sug.authorId).catch(() => null);
         const authorData = author || { tag: 'Unknown User', displayAvatarURL: () => '' };
 
@@ -329,10 +326,18 @@ export const interactionCreateEvent = {
 };
 
 async function createAndSendSuggestion(interaction: Interaction, data: any, isUpdate = false) {
-  const channel = interaction.client.channels.cache.get(BotConfig.modules.suggestions.channelId) as TextChannel;
+  if (!interaction.guildId) return;
+  const config = await ConfigService.getConfig(interaction.guildId);
+
+  if (!config || !config.suggestionsChannelId) {
+    const msg = 'This server has not configured a Suggestions channel yet. Please ask an Administrator to run `/setup`.';
+    return isUpdate ? (interaction as any).update({ content: msg, embeds: [], components: [] }) : (interaction as any).reply({ content: msg, ephemeral: true });
+  }
+
+  const channel = interaction.client.channels.cache.get(config.suggestionsChannelId) as TextChannel;
   if (!channel) {
-    const r = { content: 'Suggestions channel not found!', ephemeral: true };
-    return isUpdate ? (interaction as any).update(r) : (interaction as any).reply(r);
+    const msg = 'The configured Suggestions channel was not found. Please ask an Administrator to run `/setup`.';
+    return isUpdate ? (interaction as any).update({ content: msg, embeds: [], components: [] }) : (interaction as any).reply({ content: msg, ephemeral: true });
   }
 
   const sug = await SuggestionService.createSuggestion(data);
@@ -361,11 +366,11 @@ async function createAndSendSuggestion(interaction: Interaction, data: any, isUp
       ])
   );
 
-  const msg = await channel.send({ embeds: [embed], components: [btnRow, selectRow] });
-  await SuggestionService.updateSuggestion(sug.id, { messageId: msg.id });
+  const msgEmbed = await channel.send({ embeds: [embed], components: [btnRow, selectRow] });
+  await SuggestionService.updateSuggestion(sug.id, { messageId: msgEmbed.id });
 
   if (BotConfig.modules.suggestions.autoCreateThread) {
-    const thread = await msg.startThread({ name: `Suggestion #${sug.id} Discussion` });
+    const thread = await msgEmbed.startThread({ name: `Suggestion #${sug.id} Discussion` });
     await SuggestionService.updateSuggestion(sug.id, { threadId: thread.id });
   }
 
@@ -374,10 +379,18 @@ async function createAndSendSuggestion(interaction: Interaction, data: any, isUp
 }
 
 async function createAndSendBug(interaction: Interaction, data: any, isUpdate = false) {
-  const channel = interaction.client.channels.cache.get(BotConfig.modules.bugs.channelId) as TextChannel;
+  if (!interaction.guildId) return;
+  const config = await ConfigService.getConfig(interaction.guildId);
+
+  if (!config || !config.bugsChannelId) {
+    const msg = 'This server has not configured a Bug Reports channel yet. Please ask an Administrator to run `/setup`.';
+    return isUpdate ? (interaction as any).update({ content: msg, embeds: [], components: [] }) : (interaction as any).reply({ content: msg, ephemeral: true });
+  }
+
+  const channel = interaction.client.channels.cache.get(config.bugsChannelId) as TextChannel;
   if (!channel) {
-    const r = { content: 'Bugs channel not found!', ephemeral: true };
-    return isUpdate ? (interaction as any).update(r) : (interaction as any).reply(r);
+    const msg = 'The configured Bug Reports channel was not found. Please ask an Administrator to run `/setup`.';
+    return isUpdate ? (interaction as any).update({ content: msg, embeds: [], components: [] }) : (interaction as any).reply({ content: msg, ephemeral: true });
   }
 
   const bug = await BugService.createBug(data);
@@ -407,11 +420,11 @@ async function createAndSendBug(interaction: Interaction, data: any, isUpdate = 
       ])
   );
 
-  const msg = await channel.send({ embeds: [embed], components: [btnRow, selectRow] });
-  await BugService.updateBug(bug.id, { messageId: msg.id });
+  const msgEmbed = await channel.send({ embeds: [embed], components: [btnRow, selectRow] });
+  await BugService.updateBug(bug.id, { messageId: msgEmbed.id });
 
   if (BotConfig.modules.bugs.autoCreateThread) {
-    const thread = await msg.startThread({ name: `Bug #${bug.id} Discussion` });
+    const thread = await msgEmbed.startThread({ name: `Bug #${bug.id} Discussion` });
     await BugService.updateBug(bug.id, { threadId: thread.id });
   }
 

@@ -110,3 +110,12 @@ export const threads = pgTable('threads', {
   type: text('type').notNull(), // 'suggestion' | 'bug'
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
+
+export const guildConfigs = pgTable('guild_configs', {
+  guildId: text('guild_id').primaryKey(),
+  suggestionsChannelId: text('suggestions_channel_id'),
+  bugsChannelId: text('bugs_channel_id'),
+  staffRoleIds: text('staff_role_ids'), // stored as comma-separated string
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});

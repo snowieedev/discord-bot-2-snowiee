@@ -1,5 +1,6 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import { SuggestionService } from '../services/suggestionService';
+import { ConfigService } from '../services/configService';
 import { BotConfig } from '../config';
 
 export const suggestionsCommand = {
@@ -52,6 +53,9 @@ export const suggestionsCommand = {
       return interaction.followUp('No suggestions found matching those filters.');
     }
 
+    const config = interaction.guildId ? await ConfigService.getConfig(interaction.guildId) : null;
+    const channelId = config?.suggestionsChannelId;
+
     const embed = new EmbedBuilder()
       .setTitle('Suggestions Search Results')
       .setColor(BotConfig.brandColor);
@@ -61,8 +65,8 @@ export const suggestionsCommand = {
     let desc = '';
     topResults.forEach(s => {
       desc += `**#${s.id} - ${s.title}**\nProject: ${s.projectKey} | Status: ${s.status} | ⬆️ ${s.upvotes} ⬇️ ${s.downvotes}\n`;
-      if (s.messageId) {
-        desc += `[View Suggestion](https://discord.com/channels/${interaction.guildId}/${BotConfig.modules.suggestions.channelId}/${s.messageId})\n\n`;
+      if (s.messageId && channelId) {
+        desc += `[View Suggestion](https://discord.com/channels/${interaction.guildId}/${channelId}/${s.messageId})\n\n`;
       } else {
         desc += '\n';
       }
